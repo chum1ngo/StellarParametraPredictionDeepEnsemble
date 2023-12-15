@@ -1,0 +1,280 @@
+############### automatic, 50 trials
+
+Model: "model"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ input_1 (InputLayer)        [(None, 139, 1)]          0         
+                                                                 
+ cast_to_float32 (CastToFloa  (None, 139, 1)           0         
+ t32)                                                            
+                                                                 
+ conv1d (Conv1D)             (None, 137, 32)           128       
+                                                                 
+ conv1d_1 (Conv1D)           (None, 135, 32)           3104      
+                                                                 
+ max_pooling1d (MaxPooling1D  (None, 67, 32)           0         
+ )                                                               
+                                                                 
+ conv1d_2 (Conv1D)           (None, 65, 32)            3104      
+                                                                 
+ conv1d_3 (Conv1D)           (None, 63, 32)            3104      
+                                                                 
+ max_pooling1d_1 (MaxPooling  (None, 31, 32)           0         
+ 1D)                                                             
+                                                                 
+ flatten (Flatten)           (None, 992)               0         
+                                                                 
+ dense (Dense)               (None, 32)                31776     
+                                                                 
+ re_lu (ReLU)                (None, 32)                0         
+                                                                 
+ dense_1 (Dense)             (None, 512)               16896     
+                                                                 
+ re_lu_1 (ReLU)              (None, 512)               0         
+                                                                 
+ regression_head_1 (Dense)   (None, 3)                 1539      
+                                                                 
+=================================================================
+Total params: 59,651
+Trainable params: 59,651
+Non-trainable params: 0
+_________________________________________________________________
+
+val_loss = 0.0065
+
+
+############### Config fixed search space, 100 trials
+
+from keras_tuner.engine import hyperparameters as hp
+
+# convBlock
+conv_kernel_size = hp.Choice("kernel_size", [3,5,7,9],)
+conv_num_layers = hp.Choice("conv_layers", [2,3,5],)
+conv_num_blocks = hp.Choice("conv_blocks", [1,2,3,4,5],)
+conv_filters = hp.Choice("filters", [32,64,128],)
+conv_dropout = hp.Float(
+                'dropout_conv',
+                min_value=0.0,
+                max_value=0.5,
+                default=0.25,
+                step=0.05,
+            )
+
+# # DenseBlock
+dense_num_layers = hp.Choice("dense_layers", [1,2,3])
+dense_units = hp.Choice("dense_units", [32,64,128,256])
+dense_dropout = hp.Float(
+                'dropout_dense',
+                min_value=0.0,
+                max_value=0.5,
+                default=0.25,
+                step=0.05,
+            )
+
+# RegressionHead
+head_dropout = hp.Float(
+                'dropout_head',
+                min_value=0.0,
+                max_value=0.5,
+                default=0.25,
+                step=0.05,
+            )
+
+input = ak.Input()
+conv = ak.ConvBlock(
+  	kernel_size=conv_kernel_size,
+  	num_blocks=conv_num_blocks,
+  	num_layers=conv_num_layers,
+  	filters=conv_filters,
+  	max_pooling=True,
+		separable=False,
+  	#dropout=conv_dropout,
+)(input)
+dense = ak.DenseBlock(
+  	num_layers=dense_num_layers, 
+  	num_units=dense_units, 
+  	use_batchnorm=False, 
+  	#dropout=dense_dropout
+)(conv)
+regression_output = ak.RegressionHead(
+  	output_dim=3, 
+   	loss="mse", 
+    metrics=["mae"], 
+    #dropout=head_dropout,
+)(dense)
+
+model =  ak.AutoModel(
+	inputs=input,
+	outputs=regression_output,
+	max_trials=100,
+	loss='mse',
+	metrics = 'mae',
+	tuner='bayesian',
+	overwrite=True,
+	seed=19,
+	max_model_size=None,)
+
+Model: "model"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ input_1 (InputLayer)        [(None, 139, 1)]          0         
+                                                                 
+ cast_to_float32 (CastToFloa  (None, 139, 1)           0         
+ t32)                                                            
+                                                                 
+ conv1d (Conv1D)             (None, 133, 128)          1024      
+                                                                 
+ conv1d_1 (Conv1D)           (None, 127, 32)           28704     
+                                                                 
+ max_pooling1d (MaxPooling1D  (None, 21, 32)           0         
+ )                                                               
+                                                                 
+ conv1d_2 (Conv1D)           (None, 15, 32)            7200      
+                                                                 
+ conv1d_3 (Conv1D)           (None, 9, 128)            28800     
+                                                                 
+ max_pooling1d_1 (MaxPooling  (None, 2, 128)           0         
+ 1D)                                                             
+                                                                 
+ flatten (Flatten)           (None, 256)               0         
+                                                                 
+ dense (Dense)               (None, 32)                8224      
+                                                                 
+ re_lu (ReLU)                (None, 32)                0         
+                                                                 
+ dense_1 (Dense)             (None, 256)               8448      
+                                                                 
+ re_lu_1 (ReLU)              (None, 256)               0         
+                                                                 
+ dense_2 (Dense)             (None, 64)                16448     
+                                                                 
+ re_lu_2 (ReLU)              (None, 64)                0         
+                                                                 
+ regression_head_1 (Dense)   (None, 3)                 195       
+                                                                 
+=================================================================
+Total params: 99,043
+Trainable params: 99,043
+Non-trainable params: 0
+_________________________________________________________________
+
+################ exp 2, vecindario
+
+from keras_tuner.engine import hyperparameters as hp
+
+# convBlock
+conv_kernel_size = hp.Choice("kernel_size", [3,5,7],)
+conv_num_layers = hp.Choice("conv_layers", [2,3],)
+conv_num_blocks = hp.Choice("conv_blocks", [2,3],)
+conv_filters = hp.Choice("filters", [32,64,128,256],)
+conv_dropout = hp.Float(
+                'dropout_conv',
+                min_value=0.0,
+                max_value=0.5,
+                default=0.25,
+                step=0.05,
+            )
+
+# # DenseBlock
+dense_num_layers = hp.Choice("dense_layers", [1,2,3])
+dense_units = hp.Choice("dense_units", [32,64,128,256,512])
+dense_dropout = hp.Float(
+                'dropout_dense',
+                min_value=0.0,
+                max_value=0.5,
+                default=0.25,
+                step=0.05,
+            )
+
+# RegressionHead
+head_dropout = hp.Float(
+                'dropout_head',
+                min_value=0.0,
+                max_value=0.5,
+                default=0.25,
+                step=0.05,
+            )
+
+input = ak.Input()
+conv = ak.ConvBlock(
+  	kernel_size=conv_kernel_size,
+  	num_blocks=conv_num_blocks,
+  	num_layers=conv_num_layers,
+  	filters=conv_filters,
+  	max_pooling=True,
+		separable=False,
+  	#dropout=conv_dropout,
+)(input)
+dense = ak.DenseBlock(
+  	num_layers=dense_num_layers, 
+  	num_units=dense_units, 
+  	use_batchnorm=False, 
+  	#dropout=dense_dropout
+)(conv)
+regression_output = ak.RegressionHead(
+  	output_dim=3, 
+   	loss="mse", 
+    metrics=["mae"], 
+    #dropout=head_dropout,
+)(dense)
+
+model =  ak.AutoModel(
+	inputs=input,
+	outputs=regression_output,
+	max_trials=100,
+	loss='mse',
+	metrics = 'mae',
+	tuner='greedy',
+	overwrite=True,
+	seed=19,
+	max_model_size=None,)
+
+
+Model: "model"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ input_1 (InputLayer)        [(None, 139, 1)]          0         
+                                                                 
+ cast_to_float32 (CastToFloa  (None, 139, 1)           0         
+ t32)                                                            
+                                                                 
+ conv1d (Conv1D)             (None, 137, 256)          1024      
+                                                                 
+ conv1d_1 (Conv1D)           (None, 135, 256)          196864    
+                                                                 
+ conv1d_2 (Conv1D)           (None, 133, 128)          98432     
+                                                                 
+ max_pooling1d (MaxPooling1D  (None, 66, 128)          0         
+ )                                                               
+                                                                 
+ conv1d_3 (Conv1D)           (None, 64, 256)           98560     
+                                                                 
+ conv1d_4 (Conv1D)           (None, 62, 32)            24608     
+                                                                 
+ conv1d_5 (Conv1D)           (None, 60, 128)           12416     
+                                                                 
+ max_pooling1d_1 (MaxPooling  (None, 30, 128)          0         
+ 1D)                                                             
+                                                                 
+ flatten (Flatten)           (None, 3840)              0         
+                                                                 
+ dense (Dense)               (None, 512)               1966592   
+                                                                 
+ re_lu (ReLU)                (None, 512)               0         
+                                                                 
+ dense_1 (Dense)             (None, 128)               65664     
+                                                                 
+ re_lu_1 (ReLU)              (None, 128)               0         
+                                                                 
+ regression_head_1 (Dense)   (None, 3)                 387       
+                                                                 
+=================================================================
+Total params: 2,464,547
+Trainable params: 2,464,547
+Non-trainable params: 0
+_______________________________
+
+mse = 0.0050
