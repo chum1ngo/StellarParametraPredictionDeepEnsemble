@@ -5,3 +5,8 @@
 /Data/BRSpectra
 /Data/ORSpectra
 /Data/RealSpectraZip
+/Data/RealSpectra
+/2.1.parametersPredictionWorkflow/noisy_long_range_opt
+/2.1.parametersPredictionWorkflow/raw_long_range_opt
+/2.1.parametersPredictionWorkflow/noisy_long_range_unscaled_opt
+/5.1.Optimization/auto_model
